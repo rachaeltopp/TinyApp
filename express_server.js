@@ -24,14 +24,22 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+app.post("/urls", (req, res) => {
+  console.log(req.body); //debug statement to see POST parameters
+  const shortURL = random();
+  urlDatabase[shortURL] = req.body.longURL; 
+  res.redirect(`/urls/${shortURL}`);        
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  let longURL = urlDatabase[req.params.shortURL];
+  console.log(req.params.shortURL, longURL);
+  res.redirect(longURL);
+});
+
 app.get("/urls/:id", (req, res) => {
   let templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
-});
-
-app.post("/urls", (req, res) => {
-  console.log(req.body); //debug statement to see POST parameters
-  res.send("Ok");        //respond with 'Ok' (we will replace this)
 });
 
 app.listen(PORT, () => {
