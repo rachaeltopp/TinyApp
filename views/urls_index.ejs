@@ -1,0 +1,15 @@
+<html leng="en">
+<head>
+    <title>TinyApp</title>
+</head>
+<body>
+    <header>
+        <% include ./partials/_header %>
+    </header>
+    <!-- Add EJS code here -->
+    <% for (key in urls) { %>
+        <p><%= key %> : <%= urls[key] %></p>
+    <% } %>
+    <a href="/newurl"> Get a new shortened URL here! </a>
+</body>
+</html>
