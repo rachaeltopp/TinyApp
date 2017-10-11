@@ -8,8 +8,13 @@
     </header>
     <!-- Add EJS code here -->
     <% for (key in urls) { %>
-        <p><%= key %> : <%= urls[key] %></p>
+        <p><%= key %> : <%= urls[key] %> 
+            <form method="POST" action="/urls/<%= key %>/delete">
+                <button>delete</button>
+            </form> 
+        </p>
     <% } %>
+
     <a href="/newurl"> Get a new shortened URL here! </a>
 </body>
 </html>
