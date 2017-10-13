@@ -13,8 +13,8 @@ function random () {
 };
 
 let urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "" },
+  "9sm5xK": {longURL: "http://www.google.com", userID: ""}
 };
 
 let users = {
@@ -31,21 +31,34 @@ let users = {
 };
 
 app.get('/urls', (req, res) => {
-  var userId = req.cookies["userID"];
-  var user = users[userId];
-  let templateVars = { urls: urlDatabase, user: user };
+  var userID = req.cookies["userID"];
+  var user = users[userID];
+  let newDatabase = {};
+  // conditional to pick only urls that were created by this user
+  for (var key in urlDatabase) {
+    if (urlDatabase[key].userID === userID) {
+
+      newDatabase[key] = urlDatabase[key];
+    }
+  }
+  let templateVars = { urls: newDatabase, user: user };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  var userId = req.cookies["userID"];
-  var user = users[userId];
-  res.render("urls_new", {user: user});
+  var userID = req.cookies["userID"];
+  var user = users[userID];
+  if (req.cookies["userID"]) {
+    res.render("urls_new", {user: user});
+    return;
+  }
+  res.redirect("/login");
+  // res.render("urls_new", {user: user});
 });
 
 app.get("/register", (req, res) => {
-  var userId = req.cookies["userID"];
-  var user = users[userId];
+  var userID = req.cookies["userID"];
+  var user = users[userID];
   res.render("register", {user: user});
 });
 
@@ -76,31 +89,47 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = random();
-  urlDatabase[shortURL] = req.body.longURL; 
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.cookies["userID"]};
+  console.log(urlDatabase); 
   res.redirect("/urls");        
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL];
-  console.log(req.params.shortURL, longURL);
+  let longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
 app.get("/urls/:id", (req, res) => {
-  var userId = req.cookies["userID"];
-  var user = users[userId];
-  let templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id], user: user };
-  res.render("urls_show", templateVars);
+  var userID = req.cookies["userID"];
+  var user = users[userID];
+  if (userID === urlDatabase[req.params.id].userID) {
+    let templateVars = {shortURL: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: user };
+    res.render("urls_show", templateVars);
+  } else {
+    res.status(400).send("Please verify that you are logged in and that you created this shortURL.");
+  }
 });
 
 app.post("/urls/:id", (req, res) => {
-  urlDatabase[req.params.id]=req.body.longURL;
-  res.redirect("/urls");
+  if (req.cookies["userID"] === urlDatabase[req.params.id].userID) {
+    urlDatabase[req.params.id] = {longURL: req.body.longURL, userID: req.cookies["userID"]};
+    console.log(req.body.longURL);
+    res.redirect("/urls");
+    return;
+  }
+  res.send("You may not edit a URL that you have not created."); 
+ 
+  // urlDatabase[req.params.id]=req.body.longURL;
+  // res.redirect("/urls");
 })
 
 app.post("/urls/:key/delete", (req, res) => {
-  delete urlDatabase[req.params.key];
-  res.redirect("/urls");
+  if (req.cookies["userID"] === urlDatabase[req.params.key].userID) {
+    delete urlDatabase[req.params.key];
+    res.redirect("/urls");
+    return;
+  }
+  res.send("You may not delete a URL that you have not created.");
 })
 
 app.post("/login", (req, res) => {

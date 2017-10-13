@@ -6,9 +6,9 @@
     <header>
         <% include partials/_header %>
     </header>
-    <!-- Add EJS code here -->
+    
     <% for (key in urls) { %>
-        <p><%= key %> --> <%= urls[key] %> 
+        <p><%= key %> --> <%= urls[key].longURL %> 
             <form method="POST" action="/urls/<%= key %>/delete">
                 <button>delete</button>
                 <a href="/urls/<%= key %>">edit</a>
