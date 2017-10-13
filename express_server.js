@@ -2,12 +2,17 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+//const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcrypt");
 
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+//app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['userID']
+}));
 
 function random () {
   return Math.random().toString(36).slice(2,8);
@@ -31,8 +36,12 @@ let users = {
   }
 };
 
+
+// REPLACE ALL req.cookies["userID"] WITH req.session.userID
+//REPLACE ALL res.cookie("userID", users[key].id) WITH req.session.userID = "users[key].id"
+
 app.get('/urls', (req, res) => {
-  var userID = req.cookies["userID"];
+  var userID = req.session.userID; 
   var user = users[userID];
   let newDatabase = {};
   // conditional to pick only urls that were created by this user
@@ -47,9 +56,9 @@ app.get('/urls', (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  var userID = req.cookies["userID"];
+  var userID = req.session.userID;
   var user = users[userID];
-  if (req.cookies["userID"]) {
+  if (req.session.userID) {
     res.render("urls_new", {user: user});
     return;
   }
@@ -58,7 +67,7 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/register", (req, res) => {
-  var userID = req.cookies["userID"];
+  var userID = req.session.userID;
   var user = users[userID];
   res.render("register", {user: user});
 });
@@ -82,7 +91,7 @@ app.post("/register", (req, res) => {
   }   
   users[userID] = {id: userID, email: req.body.email, password: hashedPassword};
   console.log("users at userID", users[userID]);
-  res.cookie("userID", userID);
+  req.session.userID = users[userID].id;
   res.redirect("/urls");
 });
 
@@ -92,7 +101,7 @@ app.get("/login", (req, res) => {
 
 app.post("/urls", (req, res) => {
   const shortURL = random();
-  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.cookies["userID"]};
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.session.userID};
   console.log(urlDatabase); 
   res.redirect("/urls");        
 });
@@ -103,7 +112,7 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  var userID = req.cookies["userID"];
+  var userID = req.session.userID;
   var user = users[userID];
   if (userID === urlDatabase[req.params.id].userID) {
     let templateVars = {shortURL: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: user };
@@ -114,8 +123,8 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  if (req.cookies["userID"] === urlDatabase[req.params.id].userID) {
-    urlDatabase[req.params.id] = {longURL: req.body.longURL, userID: req.cookies["userID"]};
+  if (req.session.userID === urlDatabase[req.params.id].userID) {
+    urlDatabase[req.params.id] = {longURL: req.body.longURL, userID: req.session.userID};
     console.log(req.body.longURL);
     res.redirect("/urls");
     return;
@@ -127,7 +136,7 @@ app.post("/urls/:id", (req, res) => {
 })
 
 app.post("/urls/:key/delete", (req, res) => {
-  if (req.cookies["userID"] === urlDatabase[req.params.key].userID) {
+  if (req.session.userID === urlDatabase[req.params.key].userID) {
     delete urlDatabase[req.params.key];
     res.redirect("/urls");
     return;
@@ -139,7 +148,7 @@ app.post("/login", (req, res) => {
   for (var key in users) {
     if (req.body.email === users[key].email) {
       if (require("bcrypt").compareSync(req.body.password, users[key].password)) {
-        res.cookie("userID", users[key].id);
+        req.session.userID = users[key].id;
         res.redirect("/urls");
         return;
       } else {
@@ -152,7 +161,7 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('userID')
+  req.session = null; // replaced res.clearCookie('userID')
   res.redirect("/urls");
 });
 
