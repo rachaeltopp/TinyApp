@@ -5,7 +5,7 @@
 <body>
     <header>
         <% include partials/_header %>
-    </header>
+    </header> <br>
     
     <% for (key in urls) { %>
         <p><%= key %> --> <%= urls[key].longURL %> 
@@ -14,7 +14,7 @@
                 <a href="/urls/<%= key %>">edit</a>
             </form> 
         </p>
-    <% } %>
+    <% } %> <br>
 
     <a href="/urls/new"> Get a new shortened URL here! </a>
 </body>
